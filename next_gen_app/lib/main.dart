@@ -4,141 +4,290 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _isDarkMode = false;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+      theme: _isDarkMode
+          ? ThemeData.dark().copyWith(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+            )
+          : ThemeData.light().copyWith(
+              colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+            ),
+      home: MyHomePage(
+        title: 'Flutter Demo Home Page',
+        toggleTheme: () {
+          setState(() {
+            _isDarkMode = !_isDarkMode;
+          });
+        },
+        isDarkMode: _isDarkMode,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+  const MyHomePage({super.key, required this.title, required this.toggleTheme, required this.isDarkMode});
 
   final String title;
+  final VoidCallback toggleTheme;
+  final bool isDarkMode;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+  double _income = 0.0;
+  final TextEditingController _incomeController = TextEditingController();
+  final TextEditingController _expensesController = TextEditingController();
 
-  void _incrementCounter() {
+  // List to store categorized expenses
+  Map<String, double> _categorizedExpenses = {};
+  String _selectedCategory = 'Food'; // Default selected category
+
+  final List<String> _expenseCategories = ['Food', 'Rent', 'Transport', 'Others'];
+
+  double get _expenses {
+    // Calculate total expenses by summing all values in the map
+    return _categorizedExpenses.values.fold(0.0, (sum, item) => sum + item);
+  }
+
+  double get _total => _income - _expenses;
+
+  void _insertIncome() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      _income = double.tryParse(_incomeController.text) ?? 0.0;
     });
   }
 
-  // New method to reset the counter
-  void _resetCounter() {
+  void _insertExpenses() {
+    double expenseAmount = double.tryParse(_expensesController.text) ?? 0.0;
     setState(() {
-      _counter = 0; // Reset the counter to zero
+      if (_categorizedExpenses.containsKey(_selectedCategory)) {
+        _categorizedExpenses[_selectedCategory] =
+            _categorizedExpenses[_selectedCategory]! + expenseAmount;
+      } else {
+        _categorizedExpenses[_selectedCategory] = expenseAmount;
+      }
     });
   }
 
   @override
+  void dispose() {
+    _incomeController.dispose();
+    _expensesController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: Row( // Updated to use a Row for multiple buttons
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton(
-            onPressed: _incrementCounter,
-            tooltip: 'Increment',
-            child: const Icon(Icons.add),
-          ),
-          const SizedBox(width: 10), // Add space between buttons
-          // New FloatingActionButton for resetting the counter
-          FloatingActionButton(
-            onPressed: _resetCounter,
-            tooltip: 'Reset',
-            child: const Icon(Icons.refresh),
+        actions: [
+          Switch(
+            value: widget.isDarkMode,
+            onChanged: (value) {
+              widget.toggleTheme();
+            },
           ),
         ],
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+      ),
+      body: Column(
+        children: [
+          // Top bar with income, expenses, and total
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+            color: Colors.grey[300], // Light grey background for the bar
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween, // Space between income, expenses, and total
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Income',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'R${_income.toStringAsFixed(2)}', // Changed to Rand
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'Expenses',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'R${_expenses.toStringAsFixed(2)}', // Changed to Rand
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      'Total',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      'R${_total.toStringAsFixed(2)}', // Changed to Rand
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    // Section for income entry
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200], // Light grey background
+                        borderRadius: BorderRadius.circular(10), // Rounded corners
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Enter Income',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _incomeController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Income Amount',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.attach_money), // Icon for income
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          ElevatedButton.icon(
+                            onPressed: _insertIncome,
+                            icon: const Icon(Icons.add_circle_outline, color: Colors.white), // Icon in button
+                            label: const Text('Insert Income', style: TextStyle(color: Colors.white)), // Text color
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepPurple, // Button color
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Section for expense entry
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200], // Light grey background
+                        borderRadius: BorderRadius.circular(10), // Rounded corners
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Enter Expenses',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _expensesController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Expense Amount',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.money_off), // Icon for expense
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          DropdownButton<String>(
+                            value: _selectedCategory,
+                            items: _expenseCategories.map((String category) {
+                              return DropdownMenuItem<String>(
+                                value: category,
+                                child: Text(category),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedCategory = newValue!;
+                              });
+                            },
+                          ),
+                          const SizedBox(height: 10),
+                          ElevatedButton.icon(
+                            onPressed: _insertExpenses,
+                            icon: const Icon(Icons.add_shopping_cart, color: Colors.white), // Icon in button
+                            label: const Text('Insert Expenses', style: TextStyle(color: Colors.white)), // Text color
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepPurple, // Button color
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Display categorized expenses with a similar grey background
+                    const Text(
+                      'Expenses by Category:',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    ..._categorizedExpenses.entries.map((entry) {
+                      return Container(
+                        margin: const EdgeInsets.symmetric(vertical: 5), // Space between items
+                        padding: const EdgeInsets.all(10), // Padding inside each category box
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200], // Similar grey background to the top bar
+                          borderRadius: BorderRadius.circular(8), // Rounded corners
+                        ),
+                        child: ListTile(
+                          title: Text(entry.key),
+                          trailing: Text('R${entry.value.toStringAsFixed(2)}'), // Changed to Rand
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
